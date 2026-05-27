@@ -85,7 +85,7 @@ All datasets are provided in **FASTA format**.
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/Farman335/GAC-BiT-CNN-MT.git
+git clone https://github.com/MuhammadMuazzam/GAT-BiT-CNN.git
 cd GAC-BiT-CNN-MT
 ```
 
