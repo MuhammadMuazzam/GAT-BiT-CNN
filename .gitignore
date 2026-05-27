@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+*.ipynb
+
+# Data files (large CSVs - upload manually)
+embeddings/
+*.csv
+
+# Saved Models (upload manually or via Git LFS)
+saved_model/
+*.keras
+*.h5
+*.pb
+*.json
+
+# Results (optional - can upload if needed)
+# results/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Kaggle
+kaggle.json
