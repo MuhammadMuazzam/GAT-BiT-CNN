@@ -1,4 +1,4 @@
-# GAC-BiT-CNN: Enhancing Functional Prediction of Methyltransferases Using a Hybrid Deep Learning Model with Protein Language Model Embeddings
+# Explainable Deep Representation Learning for Methyltransferase Identification via Bidirectional Transformers and Adversarial Capsule Networks
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange)](https://www.tensorflow.org/)
@@ -10,7 +10,7 @@
 
 This repository contains the complete source code, datasets, and trained model files for the paper:
 
-> **"Enhancing Functional Prediction of Methyltransferases Using a Hybrid GAC-BiT-CNN Deep Learning Model with Protein Language Model Embeddings"**
+> **"Explainable Deep Representation Learning for Methyltransferase Identification via Bidirectional Transformers and Adversarial Capsule Networks"**
 > Muhammad Muazzam, Farman Ali, Muhammad Asif
 > Department of Computer Science, Bahria University Islamabad, Pakistan
 
@@ -30,10 +30,13 @@ Combined with four state-of-the-art protein language model embeddings:
 
 ## 📊 Results Summary
 
-| Dataset        | Accuracy | Sensitivity | Specificity | AUC    | MCC   |
-|---------------|----------|-------------|-------------|--------|-------|
-| Training (CV)  | 98.34%   | 98.39%      | 98.29%      | 99.78% | 0.967 |
-| Independent Test | 98.16% | 97.89%      | 98.42%      | 99.74% | 0.963 |
+| Dataset                          | Accuracy | Sensitivity | Specificity | AUC    | MCC   |
+|-----------------------------------|----------|-------------|-------------|--------|-------|
+| Training (5-Fold CV)              | 98.34%   | 98.39%      | 98.29%      | 99.78% | 0.967 |
+| Test Dataset (held-out)           | 95.50%   | 95.23%      | 95.76%      | 98.70% | 0.901 |
+| Independent (Blind) Dataset       | 93.00%   | 89.41%      | 96.60%      | 97.51% | 0.862 |
+
+Performance decreases progressively from training → test → independent evaluation, reflecting a realistic and expected generalisation gradient rather than overfitting to the training distribution.
 
 ---
 
@@ -44,13 +47,13 @@ GAC-BiT-CNN-MT/
 │
 ├── data/
 │   ├── data_training.txt          # Training dataset (FASTA format) — 2290 PMT + 2290 non-PMT
-│   ├── data_testing.txt           # Independent test dataset (FASTA format) — 572 PMT + 572 non-PMT
-│   └── external_dataset.txt       # External/blind validation dataset (FASTA format)
+│   ├── data_testing.txt           # Held-out test dataset (FASTA format) — 572 PMT + 572 non-PMT
+│   └── external_dataset.txt       # External/blind independent validation dataset (FASTA format)
 │
 ├── code/
 │   ├── feature_extraction.py      # Feature extraction using ProtGen, ESM-2, ProtT5-BFD, ProtT5-XL
 │   ├── GAC_BiT_CNN_Training.py    # Model training with 5-fold cross-validation
-│   ├── GAC_BiT_CNN_Testing.py     # Independent test set evaluation
+│   ├── GAC_BiT_CNN_Testing.py     # Test set and independent (blind) dataset evaluation
 │   └── fuse_features.py           # Fuse multiple embedding CSVs into one feature set
 │
 ├── results/
@@ -71,13 +74,14 @@ All datasets are provided in **FASTA format**.
 |------|----------------|---------------------|-------|
 | `data/data_training.txt` | 2,290 | 2,290 | 4,580 |
 | `data/data_testing.txt`  | 572   | 572   | 1,144 |
-| `data/external_dataset.txt` | Variable | Variable | Variable |
+| `data/external_dataset.txt` (blind/independent) | Variable | Variable | Variable |
 
 **Dataset Construction:**
 - Positive sequences retrieved from NCBI using query "Methyltransferase"
 - Negative sequences retrieved from NCBI (non-methyltransferase proteins)
 - Redundancy removed using **CD-HIT** at **40% sequence identity threshold**
 - Sequences shorter than 50 amino acids were excluded
+- The held-out test dataset is drawn from the same overall sequence collection as training (80:20 split); the external/blind dataset is composed of sequences entirely unseen during training, validation, or hyperparameter tuning, providing a stricter, fully independent generalisation check
 
 ---
 
@@ -140,7 +144,7 @@ The trained model will be saved as:
 - `GAC_BiTCN.weights.h5` — Weights only
 - `GAC_BiTCN.json` — Model architecture
 
-### Step 4 — Evaluate on Independent Test Set
+### Step 4 — Evaluate on Test and Independent (Blind) Datasets
 
 ```bash
 python code/GAC_BiT_CNN_Testing.py
@@ -205,10 +209,12 @@ Input (Fused Embeddings: 4352-dim)
 
 ## 📈 Comparison with State-of-the-Art
 
+Evaluated on the held-out test dataset:
+
 | Method | Accuracy | Sensitivity | Specificity | AUC | MCC |
 |--------|----------|-------------|-------------|-----|-----|
 | PMTPred [Yadav et al., 2024] | 87.94% | 89.38% | 88.48% | 90.40% | 0.759 |
-| **GAC-BiT-CNN (Proposed)** | **98.16%** | **97.89%** | **98.42%** | **99.74%** | **0.963** |
+| **GAC-BiT-CNN (Proposed)** | **95.50%** | **95.23%** | **95.76%** | **98.70%** | **0.901** |
 
 ---
 
@@ -232,8 +238,9 @@ If you use this code or dataset in your research, please cite:
 
 ```bibtex
 @article{muazzam2025gacbitcnn,
-  title={Enhancing Functional Prediction of Methyltransferases Using a Hybrid 
-         GAC-BiT-CNN Deep Learning Model with Protein Language Model Embeddings},
+  title={Explainable Deep Representation Learning for Methyltransferase 
+         Identification via Bidirectional Transformers and Adversarial 
+         Capsule Networks},
   author={Muazzam, Muhammad and Ali, Farman and Asif, Muhammad},
   journal={},
   year={2025},
