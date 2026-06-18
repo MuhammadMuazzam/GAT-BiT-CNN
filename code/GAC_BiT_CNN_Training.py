@@ -2,8 +2,7 @@
 =============================================================================
 GAC-BiT-CNN: Model Training with 5-Fold Cross-Validation
 =============================================================================
-Paper: Enhancing Functional Prediction of Methyltransferases Using a Hybrid
-       GAC-BiT-CNN Deep Learning Model with Protein Language Model Embeddings
+Paper: Explainable Deep Representation Learning for Methyltransferase Identification via Bidirectional Transformers and Adversarial Capsule Networks
 
 Authors: Muhammad Muazzam, Farman Ali, Muhammad Asif
          Department of Computer Science, Bahria University Islamabad, Pakistan
