@@ -2,9 +2,7 @@
   SAMPLE OUTPUT RESULTS -- GAC-BiT-CNN
 =====================================================================
 
-  Paper  : Enhancing Functional Prediction of Methyltransferases
-           Using a Hybrid GAC-BiT-CNN Deep Learning Model with
-           Protein Language Model Embeddings
+  Paper  : Explainable Deep Representation Learning for Methyltransferase Identification via Bidirectional Transformers and Adversarial Capsule Networks
   Authors: Muhammad Muazzam, Farman Ali, Muhammad Asif
   Affil. : Department of Computer Science,
            Bahria University Islamabad, Pakistan
@@ -458,9 +456,7 @@ TABLE OF CONTENTS
   If you use this code or results, please cite:
 
   @article{muazzam2025gacbitcnn,
-    title   = {Enhancing Functional Prediction of Methyltransferases
-               Using a Hybrid GAC-BiT-CNN Deep Learning Model with
-               Protein Language Model Embeddings},
+    title   = {Explainable Deep Representation Learning for Methyltransferase Identification via Bidirectional Transformers and Adversarial Capsule Networks},
     author  = {Muazzam, Muhammad and Ali, Farman and Asif, Muhammad},
     journal = {[Journal Name]},
     year    = {2025},
