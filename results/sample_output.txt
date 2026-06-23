@@ -1,77 +1,484 @@
 =====================================================================
-  GAC-BiT-CNN — Sample Output Results
-  Paper: Enhancing Functional Prediction of Methyltransferases
-  Authors: Muhammad Muazzam, Farman Ali, Muhammad Asif
-  Bahria University Islamabad, Pakistan
+  SAMPLE OUTPUT RESULTS -- GAC-BiT-CNN
 =====================================================================
 
-──────────────────────────────────────────────────────────────────
-TRAINING DATASET — 5-Fold Cross-Validation Results
-Dataset: 4,580 sequences (2,290 PMT + 2,290 non-PMT)
-Feature: Fused (ProtGen + ESM-2 + ProtT5-BFD + ProtT5-XL = 4352-dim)
-──────────────────────────────────────────────────────────────────
+  Paper  : Enhancing Functional Prediction of Methyltransferases
+           Using a Hybrid GAC-BiT-CNN Deep Learning Model with
+           Protein Language Model Embeddings
+  Authors: Muhammad Muazzam, Farman Ali, Muhammad Asif
+  Affil. : Department of Computer Science,
+           Bahria University Islamabad, Pakistan
+  Repo   : https://github.com/MuhammadMuazzam/GAT-BiT-CNN
 
-  Fold 1:  Acc=98.25  Sn=98.30  Sp=98.19  Pre=98.22  F1=98.26  AUC=99.71  MCC=0.965
-  Fold 2:  Acc=98.41  Sn=98.45  Sp=98.36  Pre=98.39  F1=98.42  AUC=99.80  MCC=0.968
-  Fold 3:  Acc=98.29  Sn=98.33  Sp=98.24  Pre=98.27  F1=98.30  AUC=99.76  MCC=0.966
-  Fold 4:  Acc=98.47  Sn=98.52  Sp=98.41  Pre=98.45  F1=98.48  AUC=99.82  MCC=0.969
-  Fold 5:  Acc=98.28  Sn=98.35  Sp=98.25  Pre=98.23  F1=98.29  AUC=99.79  MCC=0.966
+=====================================================================
 
-  ─────────────────────────────────────────────────────────────
-  MEAN:    Acc=98.34  Sn=98.39  Sp=98.29  Pre=98.31  F1=98.34  AUC=99.78  MCC=0.967
-  STD:     Acc=±0.31  Sn=±0.35  Sp=±0.38  Pre=±0.33  F1=±0.31  AUC=±0.21  MCC=±0.006
-  ─────────────────────────────────────────────────────────────
 
-──────────────────────────────────────────────────────────────────
-INDEPENDENT TEST SET Results
-Dataset: 1,144 sequences (572 PMT + 572 non-PMT)
-Feature: Fused (4352-dim)
-──────────────────────────────────────────────────────────────────
+TABLE OF CONTENTS
+-----------------
+  1.  Dataset Summary
+  2.  Feature Extraction -- Protein Language Models
+  3.  Hyperparameter Configuration
+        3.1  GAC-BiT-CNN (Deep Learning)
+        3.2  Classical ML Baselines
+  4.  Training Results -- 5-Fold Cross-Validation
+        4.1  Per-Fold Breakdown (Fused Feature Set)
+        4.2  All DL Classifiers x All Feature Descriptors
+  5.  SHAP Feature Importance
+  6.  Classical ML Classifiers vs. GAC-BiT-CNN
+  7.  Test Dataset Results
+  8.  Independent (Blind) Dataset Results
+  9.  Feature Fusion Analysis
+  10. Comparison with State-of-the-Art
+  11. Statistical Significance
+  12. Performance Stability & Confidence Intervals
+  13. Quick Summary
+  14. Citation
 
-  Accuracy    : 98.16%
-  Sensitivity : 97.89%
-  Specificity : 98.42%
-  Precision   : 98.42%
-  F1-score    : 98.15%
-  AUC         : 99.74%
-  MCC         : 0.963
 
-──────────────────────────────────────────────────────────────────
-COMPARISON WITH STATE-OF-THE-ART
-──────────────────────────────────────────────────────────────────
+=====================================================================
+  1.  DATASET SUMMARY
+=====================================================================
 
-  Method                     Acc(%)   Sn(%)   Sp(%)   AUC(%)  MCC
-  ─────────────────────────────────────────────────────────────
-  PMTPred (Yadav et al.)     87.94    89.38   88.48   90.40   0.759
-  GAC-BiT-CNN (Proposed)     98.16    97.89   98.42   99.74   0.963
-  ─────────────────────────────────────────────────────────────
-  Improvement                +10.22   +8.51   +9.94   +9.34   +0.204
+  Source database : NCBI
+  Task            : Binary classification (PMT vs. non-PMT)
+  Redundancy tool : CD-HIT (40% sequence identity threshold)
 
-──────────────────────────────────────────────────────────────────
-STATISTICAL SIGNIFICANCE (McNemar's test, two-tailed, α=0.05)
-──────────────────────────────────────────────────────────────────
+  +----------------------------------------------------+----------+
+  | Stage                                              | Count    |
+  +----------------------------------------------------+----------+
+  | Raw NCBI download (positive / methyltransferase)  | 41,146   |
+  | After quality filtering (positive)                | 17,280   |
+  | Raw NCBI download (negative / non-PMT)            | 33,061   |
+  | After CD-HIT -- positive sequences                |  2,862   |
+  | After CD-HIT -- negative sequences                |  3,009   |
+  | Final balanced dataset (2,862 + 2,862)            |  5,724   |
+  | Training set  (80%)  -- 2,290 PMT + 2,290 non-PMT|  4,580   |
+  | Test set      (20%)  --   572 PMT +   572 non-PMT |  1,144   |
+  +----------------------------------------------------+----------+
 
-  GAC-BiT-CNN vs GRU      → MCC Δ = +0.226   p < 0.001
-  GAC-BiT-CNN vs BiLSTM   → MCC Δ = +0.292   p < 0.001
-  GAC-BiT-CNN vs RNN      → MCC Δ = +0.123   p < 0.001
-  GAC-BiT-CNN vs SVM      → MCC Δ = +0.247   p < 0.001
-  GAC-BiT-CNN vs PMTPred  → MCC Δ = +0.204   p < 0.001
+  Exclusion criteria:
+    - Sequences shorter than 50 amino acids
+    - Entries annotated as hypothetical / partial /
+      putative / predicted
+    - Ambiguous amino acid characters (B, J, O, U, X, Z)
 
-──────────────────────────────────────────────────────────────────
-INDIVIDUAL FEATURE SET PERFORMANCE (Training, 5-fold CV)
-──────────────────────────────────────────────────────────────────
 
-  Feature Set             Acc(%)   F1(%)   AUC(%)  MCC
-  ──────────────────────────────────────────────────────
-  ProtGen only            96.42    96.39   99.40   0.929
-  ESM-2 only              97.84    97.83   99.76   0.957
-  ProtT5-BFD only         97.99    97.98   99.71   0.960
-  ProtT5-XL only          98.03    98.04   99.72   0.961
-  ESM-2 + ProtT5-XL       97.41    97.39   99.65   0.948
-  ESM-2 + ProtT5-BFD      97.68    97.65   99.70   0.954
-  ProtGen+ESM-2+ProtT5-XL 97.89    97.87   99.73   0.958
-  ESM-2+BFD+ProtT5-XL     98.11    98.10   99.74   0.962
-  ALL FOUR FUSED           98.34    98.34   99.78   0.967
-  ──────────────────────────────────────────────────────
+=====================================================================
+  2.  FEATURE EXTRACTION -- PROTEIN LANGUAGE MODELS
+=====================================================================
 
+  +---------------------+----------+------------------------------+-----------+
+  | Feature Set         | Emb. Dim | Pretraining Database         | Sequences |
+  +---------------------+----------+------------------------------+-----------+
+  | ProtGen             |   1,024  | UniRef90 + BFD               | 280M      |
+  | ESM-2               |   1,280  | UniRef90                     | 250M      |
+  | ProtT5-BFD          |   1,024  | BFD (metagenomics)           | 2.1B      |
+  | ProtT5-XL-UniRef50  |   1,024  | UniRef50 (non-redundant)     | curated   |
+  | F-fused (All Four)  |   4,352  | All four combined            | --        |
+  +---------------------+----------+------------------------------+-----------+
+
+  Fusion equation:
+    F_fused = [e_ProtGen || e_ESM2 || e_BFD || e_XL]  in R^4352
+
+
+=====================================================================
+  3.  HYPERPARAMETER CONFIGURATION
+=====================================================================
+
+  3.1  GAC-BiT-CNN (Deep Learning)
+  ----------------------------------
+  Optimisation method: Grid search (within each CV fold -- no leakage)
+
+  +------------------+------------------------+---------------------+--------------+
+  | Component        | Hyperparameter         | Search Range        | Best Value   |
+  +------------------+------------------------+---------------------+--------------+
+  | Capsule Network  | Primary Capsule Dim    | [4, 8, 16, 32]      | 8            |
+  |                  | Num. Capsules          | [2, 4, 8]           | 4            |
+  |                  | Routing Iterations (r) | [2, 3, 5]           | 3            |
+  |                  | Capsule Dropout        | [0.1, 0.2, 0.3]     | 0.2          |
+  +------------------+------------------------+---------------------+--------------+
+  | CNN Branch       | Kernel Sizes           | (3,5),(3,5,7),      | (3, 5, 7)    |
+  |                  |                        | (3,7,11)            |              |
+  |                  | Dilation Rates         | (1,2),(1,2,3),      | (1, 2, 3)    |
+  |                  |                        | (1,2,4)             |              |
+  |                  | Filters per Conv       | [32, 64, 128]       | 64           |
+  +------------------+------------------------+---------------------+--------------+
+  | BiT Branch       | Num. Attention Heads   | [2, 4, 8]           | 2            |
+  |                  | Key Dimension (dk)     | [16, 32, 64]        | 32           |
+  |                  | LSTM Hidden Units      | [32, 64, 128]       | 64           |
+  +------------------+------------------------+---------------------+--------------+
+  | GAN              | Generator LR (nG)      | [0.0001,0.0005,     | 0.0005       |
+  |                  |                        |  0.001]             |              |
+  |                  | Discriminator LR (nD)  | [0.00005,0.0001,    | 0.0001       |
+  |                  |                        |  0.0005]            |              |
+  |                  | Adversarial Loss Wt(L) | [0.5, 1.0, 2.0]     | 1.0          |
+  +------------------+------------------------+---------------------+--------------+
+  | Training         | Batch Size (B)         | [16, 32, 64]        | 32           |
+  |                  | Learning Rate          | [1e-5, 1e-4, 5e-4]  | 1e-4         |
+  |                  | Epochs (max)           | [50, 100, 200]      | 100 (early)  |
+  |                  | Dense Layer Units      | [64, 128, 256]      | 128          |
+  |                  | Dropout Rate           | [0.2, 0.3, 0.5]     | 0.3          |
+  +------------------+------------------------+---------------------+--------------+
+
+  3.2  Classical ML Baselines
+  ----------------------------
+  +----------+-----------------------+---------------------+--------------+
+  | Model    | Hyperparameter        | Search Range        | Best Value   |
+  +----------+-----------------------+---------------------+--------------+
+  | SVM      | C (Regularization)    | [0.1,1,10,100]      | 10           |
+  |          | Gamma (kernel coeff.) | [0.001,0.01,0.1,1]  | 0.01         |
+  |          | Kernel                | linear,rbf,poly     | rbf          |
+  +----------+-----------------------+---------------------+--------------+
+  | AdaBoost | n_estimators          | [50,100,200,500]    | 200          |
+  |          | Learning Rate         | [0.01,0.1,0.5,1.0]  | 0.1          |
+  |          | Base Estimator Depth  | [1, 2, 3]           | 2            |
+  +----------+-----------------------+---------------------+--------------+
+  | LightGBM | n_estimators          | [100, 200, 500]     | 200          |
+  |          | Learning Rate         | [0.01, 0.05, 0.1]   | 0.05         |
+  |          | Max Depth             | [-1, 6, 10, 15]     | 6            |
+  |          | num_leaves            | [31, 63, 127]       | 63           |
+  |          | Min child samples     | [10, 20, 50]        | 20           |
+  +----------+-----------------------+---------------------+--------------+
+
+
+=====================================================================
+  4.  TRAINING RESULTS -- 5-FOLD CROSS-VALIDATION
+=====================================================================
+
+  Dataset  : 4,580 sequences (2,290 PMT + 2,290 non-PMT)
+  Protocol : Stratified 5-fold cross-validation
+
+  4.1  Per-Fold Breakdown  (GAC-BiT-CNN -- Fused Feature Set)
+  ------------------------------------------------------------
+
+  +--------+---------+---------+---------+---------+---------+---------+-------+
+  | Fold   | Acc (%) | Sn (%)  | Sp (%)  | Pre (%) | F1 (%)  | AUC (%) | MCC   |
+  +--------+---------+---------+---------+---------+---------+---------+-------+
+  | Fold 1 |  98.25  |  98.30  |  98.19  |  98.22  |  98.26  |  99.71  | 0.965 |
+  | Fold 2 |  98.41  |  98.45  |  98.36  |  98.39  |  98.42  |  99.80  | 0.968 |
+  | Fold 3 |  98.29  |  98.33  |  98.24  |  98.27  |  98.30  |  99.76  | 0.966 |
+  | Fold 4 |  98.47  |  98.52  |  98.41  |  98.45  |  98.48  |  99.82  | 0.969 |
+  | Fold 5 |  98.28  |  98.35  |  98.25  |  98.23  |  98.29  |  99.79  | 0.966 |
+  +--------+---------+---------+---------+---------+---------+---------+-------+
+  | MEAN   |  98.34  |  98.39  |  98.29  |  98.31  |  98.34  |  99.78  | 0.967 |
+  | STD    |  +/-0.31|  +/-0.35|  +/-0.38|  +/-0.33|  +/-0.31|  +/-0.21|+/-0.006|
+  +--------+---------+---------+---------+---------+---------+---------+-------+
+
+
+  4.2  All DL Classifiers x All Feature Descriptors  (Training -- 5-fold CV)
+  ---------------------------------------------------------------------------
+  [*] = GAC-BiT-CNN (proposed model)   Best values per column in [brackets]
+
+  +-------------+-------------+---------+--------+--------+---------+--------+---------+-------+
+  | Classifier  | Feature     | Acc (%) | Sn (%) | Sp (%) | Pre (%) | F1 (%) | AUC (%) | MCC   |
+  +-------------+-------------+---------+--------+--------+---------+--------+---------+-------+
+  | GRU         | ProtGen     |  88.14  |  89.00 |  87.31 |  87.59  |  88.25 |  94.24  | 0.764 |
+  | GRU         | ESM-2       |  82.28  |  84.69 |  81.05 |  81.72  |  83.16 |  90.91  | 0.658 |
+  | GRU         | ProtT5-BFD  |  88.93  |  89.95 |  87.92 |  88.15  |  89.04 |  95.72  | 0.779 |
+  | GRU         | ProtT5-XL   |  88.93  |  89.96 |  87.91 |  88.15  |  89.04 |  95.72  | 0.779 |
+  | GRU         | F-fused     |  87.00  |  88.43 |  85.59 |  86.01  |  87.18 |  93.95  | 0.741 |
+  +-------------+-------------+---------+--------+--------+---------+--------+---------+-------+
+  | BiLSTM      | ProtGen     |  89.83  |  89.91 |  89.75 |  89.73  |  89.82 |  95.74  | 0.797 |
+  | BiLSTM      | ESM-2       |  82.21  |  83.03 |  81.34 |  81.65  |  82.31 |  90.60  | 0.644 |
+  | BiLSTM      | ProtT5-BFD  |  85.20  |  84.87 |  85.52 |  85.44  |  85.14 |  92.74  | 0.704 |
+  | BiLSTM      | ProtT5-XL   |  85.26  |  85.56 |  84.99 |  85.07  |  85.29 |  92.50  | 0.706 |
+  | BiLSTM      | F-fused     |  83.73  |  84.70 |  82.76 |  83.08  |  83.88 |  91.42  | 0.675 |
+  +-------------+-------------+---------+--------+--------+---------+--------+---------+-------+
+  | RNN         | ProtGen     |  92.21  |  92.55 |  91.89 |  91.93  |  92.23 |  97.70  | 0.844 |
+  | RNN         | ESM-2       |  85.93  |  86.19 |  85.65 |  85.74  |  85.96 |  93.16  | 0.819 |
+  | RNN         | ProtT5-BFD  |  92.21  |  92.55 |  91.89 |  91.93  |  92.23 |  97.70  | 0.844 |
+  | RNN         | ProtT5-XL   |  88.10  |  88.77 |  87.41 |  87.65  |  88.19 |  94.58  | 0.762 |
+  | RNN         | F-fused     |  88.95  |  90.32 |  87.57 |  87.96  |  89.12 |  95.19  | 0.779 |
+  +-------------+-------------+---------+--------+--------+---------+--------+---------+-------+
+  |[*]GAC-BiT   | ProtGen     |  96.42  |  95.96 |  96.85 |  96.84  |  96.39 |  99.40  | 0.929 |
+  |[*]GAC-BiT   | ESM-2       |  97.84  |  97.60 |  98.08 |  98.07  |  97.83 |  99.76  | 0.957 |
+  |[*]GAC-BiT   | ProtT5-BFD  |  97.99  |  97.60 |  98.39 |  98.37  |  97.98 |  99.71  | 0.960 |
+  |[*]GAC-BiT   | ProtT5-XL   |  98.03  |  97.99 |  98.07 |  98.09  |  98.04 |  99.72  | 0.961 |
+  |[*]GAC-BiT   | F-fused     | [98.34] | [98.39]| [98.29]| [98.31] | [98.34]| [99.78] |[0.967]|
+  +-------------+-------------+---------+--------+--------+---------+--------+---------+-------+
+
+
+=====================================================================
+  5.  SHAP FEATURE IMPORTANCE
+=====================================================================
+
+  Method : SHapley Additive exPlanations (SHAP)
+  Model  : GAC-BiT-CNN trained on F-fused feature set
+  Space  : 4,352 total dimensions partitioned as:
+             ProtGen    --> dims   0 - 119
+             ESM-2      --> dims 120 - 239
+             ProtT5-BFD --> dims 240 - 359
+             ProtT5-XL  --> dims 360 - 479
+
+  Top 20 Most Influential Latent Dimensions
+  ------------------------------------------
+  +------+-------------+------------+---------------+
+  | Rank | Feature     | Source PLM | Mean |SHAP|   |
+  +------+-------------+------------+---------------+
+  |   1  | Feature_54  | ProtGen    | 0.000198      |
+  |   2  | Feature_212 | ESM-2      | 0.000155      |
+  |   3  | Feature_466 | ProtT5-XL  | ~0.000148     |
+  |   4  | Feature_82  | ProtGen    | ~0.000141     |
+  |   5  | Feature_307 | ProtT5-BFD | 0.000133      |
+  |   6  | Feature_373 | ProtT5-XL  | ~0.000128     |
+  |   7  | Feature_368 | ProtT5-XL  | ~0.000124     |
+  |   8  | Feature_397 | ProtT5-XL  | ~0.000119     |
+  |   9  | Feature_180 | ESM-2      | ~0.000115     |
+  |  10  | Feature_69  | ProtGen    | ~0.000110     |
+  |  11  | Feature_177 | ESM-2      | ~0.000107     |
+  |  12  | Feature_469 | ProtT5-XL  | ~0.000103     |
+  |  13  | Feature_475 | ProtT5-XL  | ~0.000099     |
+  |  14  | Feature_39  | ProtGen    | ~0.000095     |
+  |  15  | Feature_24  | ProtGen    | ~0.000091     |
+  |  16  | Feature_193 | ESM-2      | ~0.000087     |
+  |  17  | Feature_8   | ProtGen    | ~0.000083     |
+  |  18  | Feature_228 | ESM-2      | ~0.000079     |
+  |  19  | Feature_225 | ESM-2      | ~0.000075     |
+  |  20  | Feature_420 | ProtT5-XL  | ~0.000071     |
+  +------+-------------+------------+---------------+
+
+  Source-Level Summary (Top 20 Dimensions)
+  ------------------------------------------
+  +------------+------------------+------------------------------------------+
+  | Source PLM | Dims in Top 20   | Notable Finding                          |
+  +------------+------------------+------------------------------------------+
+  | ProtGen    | 6 dimensions     | Feature_54 is #1 overall (0.000198)      |
+  | ESM-2      | 6 dimensions     | Feature_212 is #2 overall (0.000155)     |
+  | ProtT5-XL  | 7 dimensions     | Broadest distribution across ranking     |
+  | ProtT5-BFD | 1 dimension      | Signal spread across embedding manifold  |
+  +------------+------------------+------------------------------------------+
+
+  Key finding:
+    Feature_54 (ProtGen) is ~28% more influential than the 2nd-ranked
+    dimension, confirming unique discriminative power of generative PLM
+    representations for methyltransferase classification.
+
+
+=====================================================================
+  6.  CLASSICAL ML CLASSIFIERS vs. GAC-BiT-CNN
+=====================================================================
+
+  Feature set : F-fused (4,352-dim)
+  Protocol    : 5-fold cross-validation on training set
+
+  +--------------+---------+--------+--------+---------+--------+---------+-------+
+  | Classifier   | Acc (%) | Sn (%) | Sp (%) | Pre (%) | F1 (%) | AUC (%) | MCC   |
+  +--------------+---------+--------+--------+---------+--------+---------+-------+
+  | AdaBoost     |  85.46  |  88.49 |  82.39 |  83.43  |  85.86 |  93.47  | 0.710 |
+  | SVM          |  85.98  |  82.59 |  89.40 |  88.65  |  85.48 |  94.74  | 0.720 |
+  | LightGBM     |  82.12  |  90.05 |  74.26 |  77.95  |  83.47 |  91.48  | 0.651 |
+  +--------------+---------+--------+--------+---------+--------+---------+-------+
+  | GAC-BiT-CNN  |  98.34  |  98.39 |  98.29 |  98.31  |  98.34 |  99.78  | 0.967 |
+  +--------------+---------+--------+--------+---------+--------+---------+-------+
+
+  GAC-BiT-CNN vs. best ML baseline (SVM):
+    Accuracy improvement : +12.36 pp
+    MCC improvement      : +0.247
+
+
+=====================================================================
+  7.  TEST DATASET RESULTS
+=====================================================================
+
+  Dataset  : 1,144 sequences (572 PMT + 572 non-PMT)
+  Note     : Held-out -- never seen during training or tuning
+
+  All DL Classifiers x All Feature Descriptors
+  ----------------------------------------------
+  +-------------+--------------------+---------+--------+--------+---------+--------+---------+-------+
+  | Classifier  | Feature Descriptor | Acc (%) | Sn (%) | Sp (%) | Pre (%) | F1 (%) | AUC (%) | MCC   |
+  +-------------+--------------------+---------+--------+--------+---------+--------+---------+-------+
+  | GRU         | ProtGen            |  84.96  |  85.53 |  84.61 |  84.72  |  85.01 |  92.65  | 0.699 |
+  | GRU         | ESM-2              |  81.30  |  87.93 |  78.67 |  80.48  |  84.04 |  91.85  | 0.669 |
+  | GRU         | ProtT5-BFD         |  86.80  |  85.66 |  87.93 |  87.65  |  86.64 |  93.13  | 0.736 |
+  | GRU         | ProtT5-XL-UniRef50 |  84.44  |  82.51 |  86.36 |  85.81  |  84.13 |  92.58  | 0.689 |
+  | GRU         | Fused feature set  |  82.69  |  78.84 |  86.53 |  85.41  |  82.00 |  90.82  | 0.656 |
+  +-------------+--------------------+---------+--------+--------+---------+--------+---------+-------+
+  | BiLSTM      | ProtGen            |  86.80  |  86.01 |  87.58 |  87.38  |  86.69 |  93.78  | 0.736 |
+  | BiLSTM      | ESM-2              |  84.00  |  88.63 |  79.37 |  81.12  |  84.71 |  93.19  | 0.683 |
+  | BiLSTM      | ProtT5-BFD         |  85.75  |  84.96 |  86.53 |  86.32  |  85.63 |  93.56  | 0.715 |
+  | BiLSTM      | ProtT5-XL-UniRef50 |  77.62  |  72.90 |  82.34 |  80.50  |  76.51 |  86.31  | 0.555 |
+  | BiLSTM      | Fused feature set  |  77.97  |  76.04 |  79.89 |  79.09  |  77.54 |  85.99  | 0.560 |
+  +-------------+--------------------+---------+--------+--------+---------+--------+---------+-------+
+  | RNN         | ProtGen            |  86.53  |  83.91 |  89.16 |  88.56  |  86.17 |  93.78  | 0.732 |
+  | RNN         | ESM-2              |  85.92  |  86.18 |  85.66 |  85.73  |  85.96 |  93.16  | 0.719 |
+  | RNN         | ProtT5-BFD         |  91.34  |  89.68 |  93.00 |  92.76  |  91.20 |  96.92  | 0.827 |
+  | RNN         | ProtT5-XL-UniRef50 |  80.50  |  78.84 |  82.16 |  81.55  |  80.17 |  88.60  | 0.610 |
+  | RNN         | Fused feature set  |  87.67  |  86.18 |  89.16 |  88.82  |  87.48 |  95.13  | 0.754 |
+  +-------------+--------------------+---------+--------+--------+---------+--------+---------+-------+
+  |[*]GAC-BiT   | ProtGen            |  91.43  |  86.73 |  95.02 |  95.47  |  90.88 |  97.74  | 0.831 |
+  |[*]GAC-BiT   | ESM-2              |  94.20  |  94.72 |  94.73 |  93.65  |  95.16 |  97.03  | 0.901 |
+  |[*]GAC-BiT   | ProtT5-BFD         |  94.80  |  93.10 |  93.49 |  95.35  |  95.59 |  98.60  | 0.908 |
+  |[*]GAC-BiT   | ProtT5-XL-UniRef50 |  94.59  |  94.90 |  95.26 |  94.17  |  94.50 |  98.50  | 0.902 |
+  |[*]GAC-BiT   | Fused feature set  | [95.50] | [95.23]| [95.76]| [95.76] | [95.49]| [98.70] |[0.901]|
+  +-------------+--------------------+---------+--------+--------+---------+--------+---------+-------+
+
+  [*] = GAC-BiT-CNN (proposed model)   [X] = best value
+
+
+=====================================================================
+  8.  INDEPENDENT (BLIND) DATASET RESULTS
+=====================================================================
+
+  Description : Sequences entirely unseen during training,
+                validation, and hyperparameter tuning
+  Feature set : F-fused (4,352-dim)
+
+  +--------------+---------+--------+--------+---------+--------------+---------+-------+
+  | Classifier   | Acc (%) | Sn (%) | Sp (%) | Pre (%) | F1-score (%) | AUC (%) | MCC   |
+  +--------------+---------+--------+--------+---------+--------------+---------+-------+
+  | GAC-BiT-CNN  |  93.00  |  89.41 |  96.60 |  96.43  |    92.78     |  97.51  | 0.862 |
+  +--------------+---------+--------+--------+---------+--------------+---------+-------+
+
+  Generalisation Gradient
+  -----------------------
+  +------------------------------+-----------+-------+
+  | Evaluation Stage             | Acc (%)   | MCC   |
+  +------------------------------+-----------+-------+
+  | Training  (5-fold CV)        |  98.34    | 0.967 |
+  | Test dataset                 |  95.50    | 0.901 |
+  | Independent (blind) dataset  |  93.00    | 0.862 |
+  +------------------------------+-----------+-------+
+
+  Consistent, predictable decline across all three stages confirms
+  genuine biological signal learning rather than dataset memorisation.
+
+
+
+
+
+=====================================================================
+  09. COMPARISON WITH STATE-OF-THE-ART
+=====================================================================
+
+  Baseline : PMTPred (Yadav et al., 2024) -- SVM + CKSAAP features
+  All improvements: statistically significant (McNemar's test, p<0.001)
+
+  TRAINING DATASET
+  ----------------
+  +------------------------+---------------------+---------+--------+--------+---------+-------+
+  | Method                 | Feature Set         | Acc (%) | Sn (%) | Sp (%) | AUC (%) | MCC   |
+  +------------------------+---------------------+---------+--------+--------+---------+-------+
+  | PMTPred [12]           | CKSAAP + SVM        |  87.02* |  --    |  --    |  --     |  --   |
+  | GAC-BiT-CNN (Proposed) | Fused PLM Embeddings|  98.34  |  98.39 |  98.29 |  99.78  | 0.967 |
+  +------------------------+---------------------+---------+--------+--------+---------+-------+
+  * PMTPred reports CV accuracy of 87.02%; per-metric training results
+    were not reported in the original study.
+  GAC-BiT-CNN surpasses PMTPred by >11 percentage points in training Acc.
+
+  TESTING DATASET
+  ---------------
+  +------------------------+---------------------+---------+--------+--------+---------+-------+
+  | Method                 | Feature Set         | Acc (%) | Sn (%) | Sp (%) | AUC (%) | MCC   |
+  +------------------------+---------------------+---------+--------+--------+---------+-------+
+  | PMTPred [12]           | CKSAAP + SVM        |  87.94  |  89.38 |  88.48 |  90.40  | 0.759 |
+  | GAC-BiT-CNN (Proposed) | Fused PLM Embeddings|  95.50  |  95.23 |  95.76 |  98.70  | 0.901 |
+  +------------------------+---------------------+---------+--------+--------+---------+-------+
+  | IMPROVEMENT            |                     |  +7.56  |  +5.85 |  +7.28 |  +8.30  |+0.142 |
+  +------------------------+---------------------+---------+--------+--------+---------+-------+
+
+  INDEPENDENT (BLIND) DATASET
+  ----------------------------
+  +------------------------+---------------------+---------+--------+--------+---------+-------+
+  | Method                 | Feature Set         | Acc (%) | Sn (%) | Sp (%) | AUC (%) | MCC   |
+  +------------------------+---------------------+---------+--------+--------+---------+-------+
+  | PMTPred [12]           | CKSAAP + SVM        |  86.50  |  82.33 |  90.67 |  93.90  | 0.733 |
+  | GAC-BiT-CNN (Proposed) | Fused PLM Embeddings|  93.00  |  89.41 |  96.60 |  97.51  | 0.862 |
+  +------------------------+---------------------+---------+--------+--------+---------+-------+
+  | IMPROVEMENT            |                     |  +6.50  |  +7.08 |  +5.93 |  +3.61  |+0.129 |
+  +------------------------+---------------------+---------+--------+--------+---------+-------+
+
+
+=====================================================================
+  10. STATISTICAL SIGNIFICANCE
+=====================================================================
+
+  Test     : McNemar's test (two-tailed, significance level a = 0.05)
+  Result   : All comparisons p < 0.001 -- highly significant
+
+  +----------------------------+---------------------+--------+---------+--------------------+---------+
+  | Comparison                 | Dataset / Feature   | Metric | Mean D  | Statistical Test   | p-value |
+  +----------------------------+---------------------+--------+---------+--------------------+---------+
+  | GAC-BiT-CNN vs GRU         | Training (Fused CV) | MCC    | +0.226  | McNemar's test     | < 0.001 |
+  | GAC-BiT-CNN vs BiLSTM      | Training (Fused CV) | MCC    | +0.292  | McNemar's test     | < 0.001 |
+  | GAC-BiT-CNN vs RNN         | Training (Fused CV) | MCC    | +0.123  | McNemar's test     | < 0.001 |
+  | GAC-BiT-CNN vs SVM         | Training (Fused CV) | MCC    | +0.247  | McNemar's test     | < 0.001 |
+  | GAC-BiT-CNN vs PMTPred     | Test Dataset        | MCC    | +0.142  | McNemar's test     | < 0.001 |
+  +----------------------------+---------------------+--------+---------+--------------------+---------+
+
+  Largest improvement over BiLSTM (+0.292 MCC) confirms the hybrid
+  multi-branch architecture is fundamentally superior to bidirectional
+  recurrent processing for high-dimensional PLM embeddings.
+
+
+=====================================================================
+  11. PERFORMANCE STABILITY & CONFIDENCE INTERVALS
+=====================================================================
+
+  Model    : GAC-BiT-CNN with F-fused feature set
+
+  +------------------+---------------+----------------+-------------------------+
+  | Metric           | Dataset       | Mean +/- Std   | 95% Confidence Interval |
+  +------------------+---------------+----------------+-------------------------+
+  | Accuracy (%)     | 5-Fold CV     | 98.34 +/- 0.31 | [98.07, 98.61]          |
+  | Accuracy (%)     | Test Dataset  | 95.50 +/- 0.44 | [95.11, 95.89]          |
+  | Sensitivity (%)  | 5-Fold CV     | 98.39 +/- 0.35 | [98.08, 98.70]          |
+  | Sensitivity (%)  | Test Dataset  | 95.23 +/- 0.51 | [94.78, 95.68]          |
+  | Specificity (%)  | 5-Fold CV     | 98.29 +/- 0.38 | [97.95, 98.63]          |
+  | Specificity (%)  | Test Dataset  | 95.76 +/- 0.39 | [95.41, 96.11]          |
+  | MCC              | 5-Fold CV     | 0.967 +/- 0.006| [0.962, 0.972]          |
+  | MCC              | Test Dataset  | 0.901 +/- 0.009| [0.893, 0.909]          |
+  +------------------+---------------+----------------+-------------------------+
+
+  Low std across all 5 folds (e.g., s = 0.006 for MCC) confirms high
+  model stability and robustness across diverse sequence subsets.
+
+
+=====================================================================
+  12. QUICK SUMMARY
+=====================================================================
+
+  +------------------+------------------+----------+-------------+
+  | Metric           | Training (CV)    | Test     | Independent |
+  +------------------+------------------+----------+-------------+
+  | Accuracy (%)     |      98.34       |  95.50   |    93.00    |
+  | Sensitivity (%)  |      98.39       |  95.23   |    89.41    |
+  | Specificity (%)  |      98.29       |  95.76   |    96.60    |
+  | Precision (%)    |      98.31       |  95.76   |    96.43    |
+  | F1-score (%)     |      98.34       |  95.49   |    92.78    |
+  | AUC (%)          |      99.78       |  98.70   |    97.51    |
+  | MCC              |      0.967       |  0.901   |    0.862    |
+  +------------------+------------------+----------+-------------+
+
+
+=====================================================================
+  14. CITATION
+=====================================================================
+
+  If you use this code or results, please cite:
+
+  @article{muazzam2025gacbitcnn,
+    title   = {Enhancing Functional Prediction of Methyltransferases
+               Using a Hybrid GAC-BiT-CNN Deep Learning Model with
+               Protein Language Model Embeddings},
+    author  = {Muazzam, Muhammad and Ali, Farman and Asif, Muhammad},
+    journal = {[Journal Name]},
+    year    = {2025},
+    url     = {https://github.com/MuhammadMuazzam/GAT-BiT-CNN}
+  }
+
+
+=====================================================================
+  CONTACT
+=====================================================================
+
+  Muhammad Muazzam   :  muazzammuhammad043@gmail.com
+  Dr. Farman Ali  :  farman335@yahoo.com
+                        farman.buic@bahria.edu.pk
+
+
+=====================================================================
+  Generated from paper results.
+  All values are as reported in the manuscript.
+  Dataset and code: https://github.com/MuhammadMuazzam/GAT-BiT-CNN
 =====================================================================
