@@ -2,14 +2,12 @@
 =============================================================================
 GAC-BiT-CNN: Model Training with 5-Fold Cross-Validation
 =============================================================================
-Paper: Explainable Deep Representation Learning for Methyltransferase Identification via Bidirectional Transformers and Adversarial Capsule Networks
 
-Authors: Muhammad Muazzam, Farman Ali, Muhammad Asif
-         Department of Computer Science, Bahria University Islamabad, Pakistan
 
 Description:
     Trains the GAC-BiT-CNN hybrid deep learning model using 5-fold
-    cross-validation on the fused feature set (4352-dim).
+    cross-validation on the fused feature set (2048-dim:
+    ProtT5-BFD (1024) + ProtT5-XL (1024) mean-pooled embeddings).
     Saves the trained model, weights, and architecture to disk.
 
 Usage:
@@ -97,7 +95,8 @@ class CapsuleLayer(tf.keras.layers.Layer):
             (batch_size, timesteps, self.num_capsules, self.dim_capsule)
         )
 
-        # Adversarial-style noise for robustness (GAN-inspired)
+        # Adversarial-style Gaussian noise for robustness (GAN-inspired; no
+        # separate generator/discriminator network is trained)
         noise = tf.random.normal(shape=tf.shape(u_hat), mean=0.0, stddev=0.01)
         u_hat += noise
 
@@ -268,7 +267,7 @@ def train(file_path, output_dir="saved_model", n_folds=5, epochs=100, batch_size
     Full 5-fold cross-validation training pipeline.
 
     Args:
-        file_path (str): Path to the fused feature CSV.
+        file_path (str): Path to the fused feature CSV (ProtT5-BFD + ProtT5-XL).
         output_dir (str): Directory to save the trained model.
         n_folds (int): Number of cross-validation folds.
         epochs (int): Maximum training epochs.
@@ -289,7 +288,7 @@ def train(file_path, output_dir="saved_model", n_folds=5, epochs=100, batch_size
     X = data.iloc[:, :-1].values
     y = data.iloc[:, -1].values
     print(f"  Features: {X.shape[1]}   Samples: {X.shape[0]}")
-    print(f"  Class distribution: PMT={int(y.sum())}, non-PMT={int((y==0).sum())}")
+    print(f"  Class distribution: MT={int(y.sum())}, non-MT={int((y==0).sum())}")
 
     scaler = StandardScaler()
     X = scaler.fit_transform(X)
@@ -369,6 +368,7 @@ def train(file_path, output_dir="saved_model", n_folds=5, epochs=100, batch_size
     print("="*55)
 
     # ── Save Model ────────────────────────────────────────────
+    # Note: the model saved here is the one trained in the last fold.
     model_path    = os.path.join(output_dir, "GAC_BiTCN.keras")
     weights_path  = os.path.join(output_dir, "GAC_BiTCN.weights.h5")
     json_path     = os.path.join(output_dir, "GAC_BiTCN.json")
